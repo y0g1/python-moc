@@ -36,7 +36,7 @@ def _quote_file_args(files):
 
 def _exec_command(command, parameters=''):
     cmd = subprocess.Popen(
-            ['mocp --%s %s' %(command, parameters)],
+            ["mocp --%s %s" %(command, parameters.replace('`', '\`'))],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             shell=True, close_fds=True
     )
