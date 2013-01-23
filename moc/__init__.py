@@ -21,7 +21,7 @@ class MocNotRunning(MocError):
     """ Raised if a command failed because the moc server does not run """
 
 # Helper functions
-def _quote_file_args(files):
+def _check_file_args(files):
     if isinstance(files, str):
         raise TypeError("Argument must be a list/iterable, not str")
     quoted = []
@@ -29,16 +29,16 @@ def _quote_file_args(files):
         if os.path.exists(file) or file.startswith(('http://', 'ftp://')):
             # MOC only supports HTTP and FTP, not even HTTPS.
             # (See `is_url` in `files.c`.)
-            quoted.append('"%s"' % file)
+            quoted.append('%s' % file)
         else:
             raise OSError("File %r does not exist" % file)
-    return ' '.join(quoted)
+    return quoted
 
-def _exec_command(command, parameters=''):
+def _exec_command(command, parameters=[]):
     cmd = subprocess.Popen(
-            ["mocp --%s %s" %(command, parameters.replace('`', '\`'))],
+            ["mocp", "--%s" % (command)] + parameters,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            shell=True, close_fds=True
+            close_fds=True
     )
     stdout, stderr = cmd.communicate()
     if cmd.returncode:
@@ -124,7 +124,7 @@ def quickplay(files):
 
     Raises an :exc:`OSError` if any of the `files` can not be found.
     """
-    _exec_command('playit', _quote_file_args(files))
+    _exec_command('playit', _check_file_args(files))
 
 
 def _moc_output_to_dict(output):
@@ -183,14 +183,14 @@ def increase_volume(level=5):
     """
     Aliases: ``increase_volume()``, ``volume_up()``, ``louder()``, ``upper_volume()``
     """
-    _exec_command('volume', '+%d' % level)
+    _exec_command('volume', ['+%d' % level])
 louder = upper_volume = volume_up = increase_volume
 
 def decrease_volume(level=5):
     """
     Aliases: ``decrease_volume()``, ``volume_down()``, ``lower()``, ``lower_volume()``
     """
-    _exec_command('volume', '-%d' % level)
+    _exec_command('volume', ['-%d' % level])
 lower = lower_volume = volume_down = decrease_volume
 
 def seek(n):
@@ -198,10 +198,10 @@ def seek(n):
     Moves the current playback seed forward by `n` seconds
     (or backward if `n` is negative).
     """
-    _exec_command('seek', n)
+    _exec_command('seek', [n])
 
 def _controls(what):
-    makefunc = lambda action: lambda: _exec_command(action, what) and None or None
+    makefunc = lambda action: lambda: _exec_command(action, [what]) and None or None
     return (makefunc(action) for action in ('on', 'off', 'toggle'))
 
 enable_repeat,   disable_repeat,   toggle_repeat   = _controls('repeat')
@@ -260,7 +260,7 @@ def playlist_append(files_directories_playlists):
     Appends the files, directories and/or in `files_directories_playlists` to
     moc's playlist.
     """
-    _exec_command('append', _quote_file_args(files_directories_playlists))
+    _exec_command('append', _check_file_args(files_directories_playlists))
 append_to_playlist = playlist_append
 
 def playlist_clear():
