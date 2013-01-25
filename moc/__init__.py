@@ -22,21 +22,24 @@ class MocNotRunning(MocError):
 
 # Helper functions
 def _check_file_args(files):
+    """
+    Checks if every element from dictonary passed in parameter is a valid 
+    filepath, is a http or ftp url.
+
+    Raises TypeError if parameter is a string or OSError if any of files
+    in dictonary does not exist.
+    """
     if isinstance(files, str):
         raise TypeError("Argument must be a list/iterable, not str")
-    quoted = []
     for file in files:
-        if os.path.exists(file) or file.startswith(('http://', 'ftp://')):
+        if not os.path.exists(file) and not file.startswith(('http://', 'ftp://')):
             # MOC only supports HTTP and FTP, not even HTTPS.
             # (See `is_url` in `files.c`.)
-            quoted.append('%s' % file)
-        else:
             raise OSError("File %r does not exist" % file)
-    return quoted
 
 def _exec_command(command, parameters=[]):
     cmd = subprocess.Popen(
-            ["mocp", "--%s" % (command)] + parameters,
+            ["mocp", "--%s" % command] + parameters,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             close_fds=True
     )
@@ -124,7 +127,8 @@ def quickplay(files):
 
     Raises an :exc:`OSError` if any of the `files` can not be found.
     """
-    _exec_command('playit', _check_file_args(files))
+    _check_file_args(files)
+    _exec_command('playit', files)
 
 
 def _moc_output_to_dict(output):
@@ -260,7 +264,8 @@ def playlist_append(files_directories_playlists):
     Appends the files, directories and/or in `files_directories_playlists` to
     moc's playlist.
     """
-    _exec_command('append', _check_file_args(files_directories_playlists))
+    _check_file_args(files_directories_playlists)
+    _exec_command('append', files_directories_playlists)
 append_to_playlist = playlist_append
 
 def playlist_clear():
