@@ -3,6 +3,10 @@ from __future__ import with_statement
 import os
 import subprocess
 
+class Cli:
+    extra_arguments = []
+
+
 STATE_NOT_RUNNING = -1
 STATE_STOPPED = 0
 STATE_PAUSED  = 1
@@ -39,7 +43,7 @@ def _check_file_args(files):
 
 def _exec_command(command, parameters=[]):
     cmd = subprocess.Popen(
-            ["mocp", "--%s" % command] + parameters,
+            ["mocp", "--%s" % command] + parameters + Cli.extra_arguments,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             close_fds=True
     )
@@ -51,6 +55,11 @@ def _exec_command(command, parameters=[]):
         else:
             raise MocError(errmsg)
     return stdout
+
+def set_config_file(config_file_path):
+    if not os.path.exists(config_file_path):
+        raise OSError("Configuration file '%r' does not exists" % config_file_path)
+    Cli.extra_arguments = Cli.extra_arguments + ["--config", config_file_path]
 
 def start_server():
     """ Starts the moc server. """
