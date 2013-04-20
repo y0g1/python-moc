@@ -22,6 +22,8 @@ Controlling the playback
 
 .. autofunction:: increase_volume
 .. autofunction:: decrease_volume
+.. autofunction:: get_volume
+.. autofunction:: set_volume
 
 .. autofunction:: moc.next
 .. autofunction:: moc.previous

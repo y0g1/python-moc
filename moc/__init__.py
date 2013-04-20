@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 from __future__ import with_statement
-import os
+import os, os.path
 import subprocess
+import socket
+import struct
+import ConfigParser
+
 
 class Cli:
     extra_arguments = []
-
+    configfile = "~/.moc/config"
+    socketfile = "~/.moc/socket2"
 
 STATE_NOT_RUNNING = -1
 STATE_STOPPED = 0
@@ -59,11 +64,24 @@ def _exec_command(command, parameters=[]):
 def set_config_file(config_file_path):
     if not os.path.exists(config_file_path):
         raise OSError("Configuration file '%r' does not exists" % config_file_path)
+
+    Cli.configfile = config_file_path
     Cli.extra_arguments = Cli.extra_arguments + ["--config", config_file_path]
+    update_moc_dir()
+
+def update_moc_dir():
+    """
+    Reads configuration file and searches for mocdir
+    """
+    config = ConfigParser.RawConfigParser()
+    config.read(os.path.expanduser(Cli.configfile))
+    if config.get('MOCDir'):
+        Cli.socketfile = config.get('MOCDir')
 
 def start_server():
     """ Starts the moc server. """
     _exec_command('server')
+    update_moc_dir()
 
 def stop_server():
     """ Shuts down the moc server.  """
@@ -205,6 +223,19 @@ def decrease_volume(level=5):
     """
     _exec_command('volume', ['-%d' % level])
 lower = lower_volume = volume_down = decrease_volume
+
+def get_volume():
+    s = socket.socket( socket.AF_UNIX, socket.SOCK_STREAM )
+    s.connect(os.path.expanduser(Cli.socketfile))
+    s.send(struct.pack('i', 0x1a))
+    unpacker = struct.Struct('i i')
+    data = s.recv(unpacker.size)
+    s.close()
+
+    return unpacker.unpack(data)[1]
+
+def set_volume(level):
+    _exec_command('volume', ['%d' % level])
 
 def seek(n):
     """
