@@ -5,7 +5,7 @@ import subprocess
 import socket
 import struct
 import ConfigParser
-
+import StringIO
 
 class Cli:
     extra_arguments = []
@@ -73,10 +73,16 @@ def update_moc_dir():
     """
     Reads configuration file and searches for mocdir
     """
+    
+    configF = StringIO.StringIO()
+    configF.write('[dummysection]')
+    configF.write(open(os.path.expanduser(Cli.configfile), 'r').read())
+    configF.seek(0, os.SEEK_SET)
+
     config = ConfigParser.RawConfigParser()
-    config.read(os.path.expanduser(Cli.configfile))
-    if config.get('MOCDir'):
-        Cli.socketfile = config.get('MOCDir')
+    config.readfp(configF)
+    if config.get('dummysection', 'MOCDir'):
+        Cli.socketfile = config.get('dummysection','MOCDir') + '/socket2'
 
 def start_server():
     """ Starts the moc server. """
